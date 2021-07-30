@@ -1,0 +1,19 @@
+[package]
+name = "cheesecake"
+version = "0.1.0"
+authors = ["aravk <aravkasi@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+dotenv = "0.15"
+glob = "0.3"
+rocket = "0.4.10"
+rocket_contrib = { version = "0.4.10", features = ["tera_templates"] }
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+chrono = "0.4.19"
+rusqlite = { version = "0.25", features = ["bundled", "chrono"] }
+nom = { version = "6.2.1", features = ["regexp"] }
+lazy_static = "1.4.0"
+html-escape = "0.2.9"

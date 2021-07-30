@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cheesecake | reader</title>
+    <link rel="stylesheet" href="/styles/reader.css">
+</head>
+<body>
+    <main>
+        <header>
+            <form id="chat_switcher">
+                <a href="/" id="home_button">cheesecake</a>
+                <div>
+                    <label for="backup">backup:</label>
+                    <select id="backup">
+                        {% for backup in selection_context.backups %}
+                            <option value="{{ backup[0] }}" {% if backup[0] == selection_context.backup_path %}selected{% endif %}>{{ backup[1] }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="chat">chat:</label>
+                    <select id="chat">
+                        {% if selection_context.chats | length %}
+                            {% for chat in selection_context.chats %}
+                                <option value="{{ chat[0] }}" {% if chat[0] == selection_context.chat_id %}selected{% endif %}>{{ chat[1] }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option>No chats found</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <button type="submit">open</button>
+            </form>
+            <div id="chat_header">
+                <span class="name">{{ name }}</span>
+                <span class="topic" title="{{ topic }}">{{ topic }}</span>
+            </div>
+            <div id="shadow"></div>
+        </header>
+        <div id="messages">
+            {% for message in messages %}
+                {% if message.message_type == "day_separator" %}
+                <div class="message day_separator">
+                    <div class="line"></div>
+                    <div class="content">{{ message.content }}</div>
+                    <div class="line"></div>
+                </div>
+                {% else %}
+                <div id="{{ message.id }}" class="message {% if message.reference %}reply{% else %}message_container{% endif %}{% if not message.separate %} attached{% endif %}">
+                    {% if message.reference %}
+                        <div class="parent" data-id="{{ message.reference[0] }}">
+                            <img src="{{ message.reference[2] }}" alt="pfp" class="avatar">
+                            <span class="name" style="color: {{ message.reference[3] }}">{{ message.reference[1] }}</span>
+                            <span class="content">{{ message.reference[4] }}</span>
+                            {% if message.reference[5] %}
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                            {% endif %}
+                        </div>
+                        <div class="message_container">
+                    {% endif %}
+                    {% if not message.separate %}
+                        <div class="spacer"></div>
+                    {% elif message.message_type == "default" %}
+                        <img src="{{ message.avatar }}" alt="pfp" class="avatar">
+                    {% else %}
+                        <div class="spacer">
+                            {% if message.message_type == "new_member" %}
+                            <svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24" viewBox="0 0 24 24" width="24"><rect fill="none" height="24" width="24"/><path d="M15,5l-1.41,1.41L18.17,11H2V13h16.17l-4.59,4.59L15,19l7-7L15,5z"/></svg>
+                            {% elif message.message_type == "pins_add" %}
+                            <svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24" viewBox="0 0 24 24" width="24"><g><rect fill="none" height="24" width="24"/></g><g><path d="M16,9V4l1,0c0.55,0,1-0.45,1-1v0c0-0.55-0.45-1-1-1H7C6.45,2,6,2.45,6,3v0 c0,0.55,0.45,1,1,1l1,0v5c0,1.66-1.34,3-3,3h0v2h5.97v7l1,1l1-1v-7H19v-2h0C17.34,12,16,10.66,16,9z" fill-rule="evenodd"/></g></svg>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <div>
+                        {% if message.message_type == "default" and message.separate %}
+                            <div class="title">
+                                <span class="name" style="color: {{ message.color }}">{{ message.name }}</span>
+                                <span class="timestamp">{{ message.created_timestamp }}</span>
+                                {% if message.bot %}<span class="bot">BOT</span>{% endif %}
+                            </div>
+                        {% endif %}
+                        <div class="content" title="{{ message.created_timestamp }}">{{ message.content | safe }}{% if message.edited_timestamp %}<div class="timestamp" title="edited at {{ message.edited_timestamp }}">(edited)</div>{% endif %}</div>
+                        {% for attachment in message.attachments %}
+                            {% if attachment[2] %}
+                            <div class="spoiler">
+                            {% endif %}
+                                {% if attachment[1] == "image" %}
+                                    <img src="{{ attachment[0] }}" class="attachment">
+                                {% elif attachment[1] == "video" %}
+                                    <video src="{{ attachment[0] }}" class="attachment" controls></video>
+                                {% elif attachment[1] == "audio" %}
+                                    <audio src="{{ attachment[0] }}" class="attachment" controls></audio>
+                                {% else %}
+                                    <div class="generic_attachment">
+                                        <a href="{{ attachment[0] }}">{{ attachment[0] | safe | split(pat="/") | last | escape }}</a>
+                                    </div>
+                                {% endif %}
+                            {% if attachment[2] %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% if message.reactions | length %}
+                            <div class="reactions">
+                            {% for reaction in message.reactions %}
+                                <div class="reaction">
+                                {% if reaction[1] %}
+                                    <img src="{{ reaction[1] }}" alt="{{ reaction[0] }}" title="{{ reaction[0] }}" class="emoji">
+                                {% else %}
+                                    {{ reaction[0] }}
+                                {% endif %}
+                                {{ reaction[2] }}
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% if message.reference %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+            <div id="bottom_loading" style="display: none"></div>
+        </div>
+    </main>
+    <aside id="search">
+        <form>
+            <div class="top">
+                <input id="query" type="text" autocapitalize="off" autocomplete="off" placeholder="query">
+                <button type="submit">search</button>
+            </div>
+            <div class="bottom">
+                <input id="filters" type="text" autocapitalize="off" autocomplete="off" placeholder="filters" title="filters">
+            </div>
+        </form>
+        <div id="results"></div>
+    </aside>
+    <div id="toast"></div>
+</body>
+<script src="/scripts/jquery-3.6.0.min.js"></script>
+<script>
+    const chats = {{ selection_context.mapped_chats | safe }};
+    function show_toast(message, duration = 2000) {
+        $("#toast").text(message).slideDown(200, () => {
+            setTimeout(() => {
+                $("#toast").slideUp(200);
+            }, duration);
+        });
+    }
+</script>
+<script src="/scripts/main.js"></script>
+<script src="/scripts/reader.js"></script>
+</html>
