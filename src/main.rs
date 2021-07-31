@@ -10,18 +10,21 @@ use rocket::{http::Cookies, request::Form, response::Redirect, Config};
 use rocket_contrib::{json::Json, serve::StaticFiles, templates::Template};
 
 mod actions;
+mod discord;
+mod matrix;
+mod generic;
 mod parser;
 mod convertor;
 
 #[derive(FromForm)]
 pub struct JumpDetails {
-    chat_id: Option<u64>,
-    message_id: Option<u64>,
+    chat_id: Option<String>,
+    message_id: Option<String>,
 }
 
 #[derive(FromForm)]
 pub struct GetMessages {
-    message_id: u64,
+    sequential_id: u64,
     position: String,
 }
 
@@ -63,14 +66,14 @@ fn get_reader(cookies: Cookies) -> Result<Template, Redirect> {
 fn post_jump(cookies: Cookies, info: Form<JumpDetails>) -> Json<actions::ChatContext> {
     if let Some(backup) = cookies.get("backup") {
         // If the chat ID is not specified, take the current chat
-        let chat_id = match info.chat_id {
+        let chat_id = match &info.chat_id {
             Some(chat_id) => chat_id,
             None => match cookies.get("chat") {
-                Some(chat) => chat.value().parse().unwrap(),
+                Some(chat) => chat.value(),
                 None => return Json(actions::ChatContext::default()),
             }
         };
-        let messages = Json(actions::jump_chat(backup.value(), chat_id, info.message_id));
+        let messages = Json(actions::jump_chat(backup.value(), chat_id, &info.message_id));
         return messages;
     }
     Json(actions::ChatContext::default())
@@ -79,15 +82,18 @@ fn post_jump(cookies: Cookies, info: Form<JumpDetails>) -> Json<actions::ChatCon
 // Used for getting the messages around a specific message ID
 #[post("/messages", data = "<info>")]
 fn post_messages(cookies: Cookies, info: Form<GetMessages>) -> Json<Vec<actions::Message>> {
+    let time = std::time::Instant::now();
     if let Some(backup) = cookies.get("backup") {
         if let Some(chat) = cookies.get("chat") {
             // The required cookies are present, so return the messages
-            return Json(actions::get_messages(
+            let messages = actions::get_messages(
                 backup.value(),
                 chat.value(),
-                info.message_id,
+                info.sequential_id,
                 &info.position,
-            ));
+            );
+            println!("time at main.rs: {}", (std::time::Instant::now() - time).as_millis());
+            return Json(messages);
         }
     }
     // Return an empty vector by default
@@ -121,6 +127,7 @@ fn rocket() -> rocket::Rocket {
         .mount("/styles", StaticFiles::from("static/styles"))
         .mount("/scripts", StaticFiles::from("static/scripts"))
         .mount("/fonts", StaticFiles::from("static/fonts"))
+        .mount("/images", StaticFiles::from("static/images"))
         .mount("/", StaticFiles::from(actions::refrigerator()).rank(20))
         .attach(Template::fairing())
 }

@@ -16,7 +16,7 @@ scroll_to_bottom();
 
 declare function show_toast(message: string, duration?: number);
 
-function jump(channel_id, message_id = null) {
+function jump(channel_id, message_id = undefined) {
     if (fetching) return;
     fetching = true;
     $.post("/jump", {
@@ -43,8 +43,7 @@ function jump(channel_id, message_id = null) {
         display_messages(result.messages, true);
         // Jump to the relevant message
         if (message_id) {
-            console.log(message_id)
-            document.getElementById(message_id).scrollIntoView();
+            document.querySelector(`[data-message-id="${message_id}"]`).scrollIntoView();
         } else {
             // Create and hide the bottom_loading div because we know we're caught up here
             $messages.append(`<div id="bottom_loading">Loading...</div>`);
@@ -59,10 +58,20 @@ function jump(channel_id, message_id = null) {
 function init_handlers() {
     $(".content a").off().on("click", function(e) {
         // Check if it's a discord message link to jump
-        let match = this["href"].match(/^https?:\/\/(canary\.|ptb\.)?discord\.com\/channels\/\d+\/(\d+)\/(\d+)/i);
-        if (match) {
+        let discord_link = this["href"].match(/^https?:\/\/(canary\.|ptb\.)?discord\.com\/channels\/\d+\/(\d+)\/(\d+)/i);
+        // Check if it's a matrix link we need to ignore
+        let matrix_link_ignore = this["href"].match(/https?:\/\/matrix\.to\/#\/@.*/i);
+        // Check if it's a matrix message link to jump
+        let matrix_link_message = this["href"].match(/https?:\/\/matrix\.to\/#\/(!.+:.+)\/(\$[^?]+)(\?.*)?/i);
+        if (discord_link) {
             e.preventDefault();
-            jump(match[2], match[3]);
+            console.log(discord_link[2], discord_link[3])
+            jump(discord_link[2], discord_link[3]);
+        } else if (matrix_link_ignore) {
+            e.preventDefault();
+        } else if (matrix_link_message) {
+            e.preventDefault();
+            jump(matrix_link_message[1], matrix_link_message[2]);
         }
     });
 
@@ -75,7 +84,7 @@ function init_handlers() {
     });
 
     $(".message.reply .parent").on("click", function() {
-        jump(null, $(this).attr("data-id"));
+        jump(undefined, $(this).attr("data-id"));
     });
 }
 
@@ -98,11 +107,16 @@ function display_messages(messages, ascending) {
             </div>`;
         } else if (!message.separate) {
             // This can't be a reply so just add the message_container class
-            html = `<div id="${message.id}" class="message message_container attached">
+            html = `<div id="${message.sequential_id}" data-message-id="${message.message_id}" class="message message_container attached">
                 <div class="spacer"></div>
                 <div>
                     <div class="content" title="${message.created_timestamp}" data-bot="${message.bot}">${message.content}</div>
                 </div>
+            </div>`;
+        } else if (message.message_type === "redacted") {
+            html = `<div id="${message.sequential_id}" data-message-id="${message.message_id}" class="message redacted">
+                <img src="${message.avatar}" alt="pfp" class="avatar">
+                <div class="content">[redacted]</div>
             </div>`;
         } else if (message.message_type === "default") {
             // We need to check if this is a reply
@@ -119,7 +133,7 @@ function display_messages(messages, ascending) {
                 </div>
                 <div class="message_container">`;
             }
-            html = `<div id="${message.id}" class="message ${message.reference ? "reply" : "message_container"}">
+            html = `<div id="${message.sequential_id}" data-message-id="${message.message_id}" class="message ${message.reference ? "reply" : "message_container"}">
                 ${parent}<img src="${message.avatar}" alt="pfp" class="avatar">
                 <div>
                     <div class="title">
@@ -132,7 +146,7 @@ function display_messages(messages, ascending) {
             </div>`;
         } else if (message.message_type === "new_member") {
             // This can't be a reply so just add the message_container class
-            html = `<div id="${message.id}" class="message message_container">
+            html = `<div id="${message.sequential_id}" data-message-id="${message.message_id}" class="message message_container">
                 <div class="spacer">
                     <svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24" viewBox="0 0 24 24" width="24"><rect fill="none" height="24" width="24"/><path d="M15,5l-1.41,1.41L18.17,11H2V13h16.17l-4.59,4.59L15,19l7-7L15,5z"/></svg>
                 </div>
@@ -142,7 +156,7 @@ function display_messages(messages, ascending) {
             </div>`;
         } else if (message.message_type === "pins_add") {
             // This can't be a reply so just add the message_container class
-            html = `<div id="${message.id}" class="message message_container">
+            html = `<div id="${message.sequential_id}" data-message-id="${message.message_id}" class="message message_container">
                 <div class="spacer">
                     <svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24" viewBox="0 0 24 24" width="24"><g><rect fill="none" height="24" width="24"/></g><g><path d="M16,9V4l1,0c0.55,0,1-0.45,1-1v0c0-0.55-0.45-1-1-1H7C6.45,2,6,2.45,6,3v0 c0,0.55,0.45,1,1,1l1,0v5c0,1.66-1.34,3-3,3h0v2h5.97v7l1,1l1-1v-7H19v-2h0C17.34,12,16,10.66,16,9z" fill-rule="evenodd"/></g></svg>
                 </div>
@@ -152,7 +166,7 @@ function display_messages(messages, ascending) {
             </div>`;
         } else {
             // This can't be a reply so just add the message_container class
-            html = `<div id="${message.id}" class="message message_container">
+            html = `<div id="${message.sequential_id}" data-message-id="${message.message_id}" class="message message_container">
                 <div class="spacer"></div>
                 <div>
                     <div class="content" title="${message.created_timestamp}" data-bot="${message.bot}">${message.content}</div>
@@ -231,7 +245,7 @@ $messages.on("scroll", function() {
         // Store the ID so we can scroll back to it after adding more messages
         const reference_message = $("#messages .message")[0].id;
         // Fetch the messages
-        $.post("/messages", {message_id: reference_message, position: "above"}).done(result => {
+        $.post("/messages", {sequential_id: reference_message, position: "above"}).done(result => {
             const $top_loading = $("#top_loading");
             if (result.length === 0) {
                 fetching = false;
@@ -259,7 +273,7 @@ $messages.on("scroll", function() {
         fetching = true;
         // Add the bottom_loading div
         $messages.append(`<div id="bottom_loading">Loading...</div>`);
-        $.post("/messages", {message_id: $("#messages .message:last")[0].id, position: "below"}).done(result => {
+        $.post("/messages", {sequential_id: $("#messages .message:last")[0].id, position: "below"}).done(result => {
             const $bottom_loading = $("#bottom_loading");
             if (result.length === 0) {
                 fetching = false;
@@ -318,7 +332,7 @@ $("#search form").on("submit", e => {
                 continue;
             }
             $results.prepend(`
-                <div class="message message_container" data-id="${message.id}">
+                <div class="message message_container" data-id="${message.sequential_id}">
                     <img src="${message.avatar}" alt="pfp" class="avatar">
                     <div>
                         <div class="title">
@@ -333,11 +347,11 @@ $("#search form").on("submit", e => {
             for (let j = 0; j < message.attachments.length; j++) {
                 let attachment = message.attachments[j];
                 if (attachment[1] === "image") {
-                    $(`#results .message[data-id="${message.id}"] > div`).append(`<img src="${attachment[0]}" alt="attachment" class="attachment">`);
+                    $(`#results .message[data-id="${message.sequential_id}"] > div`).append(`<img src="${attachment[0]}" alt="attachment" class="attachment">`);
                 } else if (attachment[1] === "video") {
-                    $(`#results .message[data-id="${message.id}"] > div`).append(`<video src="${attachment[0]}" class="attachment" controls></video>`);
+                    $(`#results .message[data-id="${message.sequential_id}"] > div`).append(`<video src="${attachment[0]}" class="attachment" controls></video>`);
                 } else if (attachment[1] === "audio") {
-                    $(`#results .message[data-id="${message.id}"] > div`).append(`<audio src="${attachment[0]}" class="attachment" controls></audio>`);
+                    $(`#results .message[data-id="${message.sequential_id}"] > div`).append(`<audio src="${attachment[0]}" class="attachment" controls></audio>`);
                 }
             }
         }
@@ -348,7 +362,7 @@ $("#search form").on("submit", e => {
             // To keep track of what message to scroll to when a search result is clicked
             let clicked = $(this).attr("data-id");
             // Fetch the messages around the clicked message
-            $.post("/messages", {message_id: $(this).attr("data-id"), position: "around"}).done(result => {
+            $.post("/messages", {sequential_id: $(this).attr("data-id"), position: "around"}).done(result => {
                 $messages.empty();
                 display_messages(result, true);
                 // Jump to the clicked message

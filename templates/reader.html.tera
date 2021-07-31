@@ -45,8 +45,13 @@
                     <div class="content">{{ message.content }}</div>
                     <div class="line"></div>
                 </div>
+                {% elif message.message_type == "redacted" %}
+                <div id="{{ message.sequential_id }}" class="message redacted">
+                    <img src="{{ message.avatar }}" alt="pfp" class="avatar">
+                    <div class="content">[redacted]</div>
+                </div>
                 {% else %}
-                <div id="{{ message.id }}" class="message {% if message.reference %}reply{% else %}message_container{% endif %}{% if not message.separate %} attached{% endif %}">
+                <div id="{{ message.sequential_id }}" data-message-id="{{ message.message_id }}" class="message {% if message.reference %}reply{% else %}message_container{% endif %}{% if not message.separate %} attached{% endif %}">
                     {% if message.reference %}
                         <div class="parent" data-id="{{ message.reference[0] }}">
                             <img src="{{ message.reference[2] }}" alt="pfp" class="avatar">

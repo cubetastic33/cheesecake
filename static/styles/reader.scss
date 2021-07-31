@@ -228,6 +228,23 @@ header, #search form {
     padding: .25em 0;
     word-break: break-word;
 
+    ol, ul {
+        margin: 0;
+        padding: 0 1em;
+    }
+
+    p {
+        margin: 0;
+    }
+
+    pre {
+        margin: 0;
+        display: inline-block;
+        font-family: monospace;
+        font-size: 1.1em;
+        white-space: pre-wrap;
+    }
+
     .spacer, .avatar {
         border-radius: 100%;
         margin: 0 1em;
@@ -458,6 +475,24 @@ header, #search form {
         border-bottom: 1px solid #757575;
         flex-grow: 1;
         margin: 0 1em;
+    }
+}
+
+.redacted {
+    align-items: center;
+    display: flex;
+
+    .avatar {
+        border-radius: 100%;
+        margin-left: calc(2em + 47px);
+        height: 1em;
+        width: 1em;
+    }
+
+    .content {
+        margin-left: .5em;
+        font-size: .9em;
+        opacity: .7;
     }
 }
 
