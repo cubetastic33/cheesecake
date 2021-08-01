@@ -141,6 +141,22 @@ header, #search form {
     }
 }
 
+input[type=password] {
+    background: none;
+    color: var(--foreground);
+    border: 1px solid var(--foreground);
+    border-radius: 4px;
+    font-size: .7em;
+    padding: .25rem .5rem;
+}
+
+input[type=password]:focus {
+    outline: none;
+    border-color: var(--accent);
+    border-width: 2px;
+    padding: calc(.25rem - 1px) calc(.5rem - 1px);
+}
+
 #shadow {
     box-shadow: 0 8px 5px -5px #00000084;
     position: absolute;

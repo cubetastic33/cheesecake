@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use rusqlite::{Connection, ToSql};
-use std::path::Path;
-use super::actions::{Message, refrigerator, day_separator};
+use std::path::{Path, PathBuf};
+use super::actions::{Message, day_separator};
 
 pub enum AssetType {
     Avatar,
@@ -50,14 +50,11 @@ pub fn file_type(file_name: &str) -> String {
 
 // A function that executes an SQL command and collects the messages into Vec<Message>
 pub fn populate_messages<'a>(
+    database_path: &'a PathBuf,
     backup_path: &'a str,
     sql_query: &'a str,
     params: &[&dyn ToSql],
 ) -> Vec<Message> {
-    // Create a connection to the database
-    let database_path = Path::new(&refrigerator())
-        .join(backup_path)
-        .join("backup.db");
     let conn = Connection::open(database_path).unwrap();
     let mut messages: Vec<Message> = Vec::new();
     let mut statement = conn.prepare(&sql_query.replace("{}", "SELECT ROWID,
@@ -81,7 +78,10 @@ pub fn populate_messages<'a>(
     while let Some(row) = rows.next().unwrap() {
         let message_type: String = row.get(2).unwrap();
         let name = row.get(3).unwrap();
-        let avatar = url(backup_path, Avatar, &row.get::<_, String>(4).unwrap());
+        let avatar = match row.get::<_, String>(4) {
+            Ok(path) => url(backup_path, Avatar, &path),
+            Err(_) => String::from("/images/default.svg"),
+        };
         let color = row.get(5).unwrap_or(String::from("#afafaf"));
         // For checking if a day separator needs to be shown
         let created_timestamp: DateTime<Local> = row.get(6).unwrap();

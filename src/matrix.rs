@@ -1,19 +1,17 @@
 use chrono::prelude::*;
 use rusqlite::{Connection, ToSql};
-use std::path::Path;
-use super::actions::{Message, refrigerator, day_separator};
+use std::path::PathBuf;
+use super::actions::{Message, day_separator};
 use super::generic::{AssetType::*, url};
 
 // A function that executes an SQL command and collects the messages into Vec<Message>
 pub fn populate_messages<'a>(
+    database_path: &'a PathBuf,
     backup_path: &'a str,
     sql_query: &'a str,
     params: &[&dyn ToSql],
 ) -> Vec<Message> {
     // Create a connection to the database
-    let database_path = Path::new(&refrigerator())
-        .join(backup_path)
-        .join("backup.db");
     let conn = Connection::open(database_path).unwrap();
     let mut messages: Vec<Message> = Vec::new();
     let mut statement = conn.prepare(&sql_query.replace("{}", "SELECT ROWID,

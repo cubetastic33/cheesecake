@@ -20,28 +20,30 @@
             {% endfor %}
             </select>
             <label for="chat">Chat:</label>
-            <select id="chat">
             {% if chats | length %}
-            {% for chat in chats %}
-                <option value="{{ chat[0] }}" {% if chat[0] == chat_id %}selected{% endif %}>{{ chat[1] }}</option>
-            {% endfor %}
-            {% else %}
-                <option>No chats found</option>
-            {% endif %}
+            <select id="chat">
+                {% for chat in chats %}
+                    <option value="{{ chat[0] }}" {% if chat[0] == chat_id %}selected{% endif %}>{{ chat[1] }}</option>
+                {% endfor %}
             </select>
+            {% else %}
+            <input type="password" id="chat" placeholder="password">
+            {% endif %}
         </div>
-        <button type="submit" {% if chats | length == 0 %}disabled{% endif %}>start reader</button>
+        <button type="submit">proceed</button>
     </form>
     {% else %}
     <p>No cheesecakes were found in the refrigerator.</p>
     {% endif %}
+    <div id="toast"></div>
     <footer>
         © 2021 | v0.1.0 | Built by aravk
     </footer>
 </body>
 <script src="/scripts/jquery-3.6.0.min.js"></script>
 <script>
-const chats = {{ mapped_chats | safe }};
+    const initial_chats = {{ mapped_chats | safe }};
+    let chats = {{ mapped_chats | safe }};
 </script>
 <script src="/scripts/main.js"></script>
 </html>

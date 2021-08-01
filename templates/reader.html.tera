@@ -144,14 +144,8 @@
 </body>
 <script src="/scripts/jquery-3.6.0.min.js"></script>
 <script>
-    const chats = {{ selection_context.mapped_chats | safe }};
-    function show_toast(message, duration = 2000) {
-        $("#toast").text(message).slideDown(200, () => {
-            setTimeout(() => {
-                $("#toast").slideUp(200);
-            }, duration);
-        });
-    }
+    const initial_chats = {{ selection_context.mapped_chats | safe }};
+    let chats = {{ selection_context.mapped_chats | safe }};
 </script>
 <script src="/scripts/main.js"></script>
 <script src="/scripts/reader.js"></script>
