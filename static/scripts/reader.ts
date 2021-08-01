@@ -14,8 +14,6 @@ function scroll_to_bottom() {
 
 scroll_to_bottom();
 
-declare function show_toast(message: string, duration?: number);
-
 function jump(channel_id, message_id = undefined) {
     if (fetching) return;
     fetching = true;
@@ -86,9 +84,26 @@ function init_handlers() {
     $(".message.reply .parent").on("click", function() {
         jump(undefined, $(this).attr("data-id"));
     });
+
+    $(".content .timestamp.clickable").off().on("click", show_edits);
 }
 
 init_handlers();
+
+function show_edits() {
+    let edits_list = JSON.parse(this.dataset.editsList);
+    let $ul = $("#edits_dialog ul");
+    $ul.empty();
+    for (let i = edits_list.length - 1; i >= 0; i--) {
+        $ul.append(`<li>${edits_list[i][1]} <span class="timestamp">(${edits_list[i][0]})</span></li>`);
+    }
+    $(".overlay").show();
+    $("#edits_dialog").show("slow");
+}
+
+$("#edits_dialog button, .overlay").on("click", () => {
+    $("#edits_dialog").hide("slow", () => $(".overlay").hide());
+});
 
 function display_messages(messages, ascending) {
     for (let i = 0; i < messages.length; i++) {
@@ -186,6 +201,13 @@ function display_messages(messages, ascending) {
         if (message.edited_timestamp) {
             $(`#messages .message:${ascending ? "last" : "first"}-child div.content`)
                 .append(`<div class="timestamp" title="edited at ${message.edited_timestamp}">(edited)</div>`);
+
+            console.log("edits list:", message.edits_list);
+            if (message.edits_list.length) {
+                $(`#messages .message:${ascending ? "last" : "first"}-child div.content .timestamp`)
+                    .attr("data-edits-list", message.edits_list)
+                    .addClass("clickable");
+            }
         }
 
         // Add any attachments to the message

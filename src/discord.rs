@@ -215,6 +215,7 @@ pub fn populate_messages<'a>(
             separate,
             reference,
             content,
+            edits_list: String::new(),
             attachments,
             reactions,
         });

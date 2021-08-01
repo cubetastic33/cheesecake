@@ -307,6 +307,10 @@ input[type=password]:focus {
         font-size: .65em;
     }
 
+    .clickable {
+        cursor: pointer !important;
+    }
+
     .attachment, div.spoiler {
         max-height: 400px;
         max-width: 400px;
@@ -539,6 +543,58 @@ a {
 
 a:hover {
     text-decoration: underline;
+}
+
+// Dialogs
+
+dialog {
+    background-color: var(--background-darker);
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 0 12px 8px #00000084;
+    color: var(--foreground);
+    display: none;
+    max-height: calc(95vh - 2rem);
+    min-width: 50%;
+    max-width: calc(95vw - 2rem);
+    overflow: auto;
+    padding: 1rem;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 12;
+
+    h1 {
+        font-size: 1.5rem;
+        margin: 0;
+        text-align: center;
+    }
+
+    ul {
+        padding: 0 0 0 1rem;
+    }
+
+    .timestamp {
+        font-size: .8em;
+        opacity: .8;
+    }
+
+    div:last-child {
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
+.overlay {
+    background-color: #00000066;
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 11;
 }
 
 // Media queries

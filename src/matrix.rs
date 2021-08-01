@@ -57,8 +57,6 @@ pub fn populate_messages<'a>(
             }
         }
 
-        // TODO edits
-
         // Attachments
         if message_type == "m.image" || message_type == "m.file" {
             let file_type = if message_type == "m.image" {"image"} else {"unknown"}.to_string();
@@ -87,9 +85,35 @@ pub fn populate_messages<'a>(
                 ..Default::default()
             });
         } else if message_type == "m.text" {
-            let content = match row.get(10) {
+            let mut content = match row.get(10) {
                 Ok(formatted_content) => formatted_content,
                 Err(_) => row.get(9).unwrap_or(String::new()),
+            };
+
+            let mut edited_timestamp = None;
+            let mut edits_list = Vec::new();
+
+            // Edits
+            if let Ok(edits) = row.get::<_, String>(7) {
+                let edits: serde_json::Value = serde_json::from_str(&edits).unwrap();
+                edits_list.push([created_timestamp.format("%Y-%m-%d %H:%M").to_string(), content.clone()]);
+                for edit in edits.as_array().unwrap() {
+                    let edit = edit.as_array().unwrap();
+                    content = match edit[4].as_str() {
+                        Some(formatted_content) => formatted_content,
+                        None => edit[2].as_str().unwrap(),
+                    }.to_string();
+                    let timestamp = edit[0].as_i64().unwrap();
+                    let timestamp = Local.timestamp(timestamp / 1000, timestamp as u32 % 1000);
+                    edited_timestamp = Some(timestamp.format("%Y-%m-%d %H:%M").to_string());
+                    edits_list.push([timestamp.format("%Y-%m-%d %H:%M").to_string(), content.clone()]);
+                }
+            }
+
+            let edits_list = if edits_list.is_empty() {
+                String::new()
+            } else {
+                serde_json::to_string(&edits_list).unwrap()
             };
 
             messages.push(Message {
@@ -100,8 +124,10 @@ pub fn populate_messages<'a>(
                 avatar,
                 color,
                 created_timestamp: created_timestamp.format("%Y-%m-%d %H:%M").to_string(),
+                edited_timestamp,
                 separate,
                 content,
+                edits_list,
                 ..Default::default()
             });
         }

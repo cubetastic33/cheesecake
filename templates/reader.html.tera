@@ -7,6 +7,14 @@
     <link rel="stylesheet" href="/styles/reader.css">
 </head>
 <body>
+    <dialog id="edits_dialog">
+        <h1>Edits</h1>
+        <ul></ul>
+        <div>
+            <button>Close</button>
+        </div>
+    </dialog>
+    <div class="overlay"></div>
     <main>
         <header>
             <form id="chat_switcher">
@@ -84,7 +92,11 @@
                                 {% if message.bot %}<span class="bot">BOT</span>{% endif %}
                             </div>
                         {% endif %}
-                        <div class="content" title="{{ message.created_timestamp }}">{{ message.content | safe }}{% if message.edited_timestamp %}<div class="timestamp" title="edited at {{ message.edited_timestamp }}">(edited)</div>{% endif %}</div>
+                        {% if message.edits_list | length %}
+                            <div class="content" title="{{ message.created_timestamp }}">{{ message.content | safe }}{% if message.edited_timestamp %}<div class="timestamp clickable" title="edited at {{ message.edited_timestamp }}" data-edits-list="{{ message.edits_list }}">(edited)</div>{% endif %}</div>
+                        {% else %}
+                            <div class="content" title="{{ message.created_timestamp }}">{{ message.content | safe }}{% if message.edited_timestamp %}<div class="timestamp" title="edited at {{ message.edited_timestamp }}">(edited)</div>{% endif %}</div>
+                        {% endif %}
                         {% for attachment in message.attachments %}
                             {% if attachment[2] %}
                             <div class="spoiler">

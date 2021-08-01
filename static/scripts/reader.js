@@ -68,8 +68,22 @@ function init_handlers() {
     $(".message.reply .parent").on("click", function () {
         jump(undefined, $(this).attr("data-id"));
     });
+    $(".content .timestamp.clickable").off().on("click", show_edits);
 }
 init_handlers();
+function show_edits() {
+    var edits_list = JSON.parse(this.dataset.editsList);
+    var $ul = $("#edits_dialog ul");
+    $ul.empty();
+    for (var i = edits_list.length - 1; i >= 0; i--) {
+        $ul.append("<li>" + edits_list[i][1] + " <span class=\"timestamp\">(" + edits_list[i][0] + ")</span></li>");
+    }
+    $(".overlay").show();
+    $("#edits_dialog").show("slow");
+}
+$("#edits_dialog button, .overlay").on("click", function () {
+    $("#edits_dialog").hide("slow", function () { return $(".overlay").hide(); });
+});
 function display_messages(messages, ascending) {
     for (var i = 0; i < messages.length; i++) {
         var message = messages[ascending ? i : messages.length - 1 - i];
@@ -109,6 +123,12 @@ function display_messages(messages, ascending) {
         if (message.edited_timestamp) {
             $("#messages .message:" + (ascending ? "last" : "first") + "-child div.content")
                 .append("<div class=\"timestamp\" title=\"edited at " + message.edited_timestamp + "\">(edited)</div>");
+            console.log("edits list:", message.edits_list);
+            if (message.edits_list.length) {
+                $("#messages .message:" + (ascending ? "last" : "first") + "-child div.content .timestamp")
+                    .attr("data-edits-list", message.edits_list)
+                    .addClass("clickable");
+            }
         }
         for (var j = 0; j < message.attachments.length; j++) {
             var attachment = message.attachments[j];

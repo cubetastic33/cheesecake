@@ -29,6 +29,7 @@ pub struct Message {
     pub separate: bool,
     pub reference: Option<(String, String, String, String, String, bool)>, // sequential_id, name, avatar, color, message, attachments?
     pub content: String,
+    pub edits_list: String,
     pub attachments: Vec<(String, String, bool)>, // source, type, spoiler?
     pub reactions: Vec<(String, Option<String>, usize)>, // name, source, count
 }
@@ -48,6 +49,7 @@ impl Default for Message {
             separate: true,
             reference: None,
             content: String::new(),
+            edits_list: String::new(),
             attachments: Vec::new(),
             reactions: Vec::new(),
         }
