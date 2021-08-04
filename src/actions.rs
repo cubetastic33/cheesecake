@@ -1,10 +1,8 @@
 use glob::glob;
 use rusqlite::Connection;
 use tempfile::NamedTempFile;
-use std::{collections::HashMap, env, fs, path::Path};
+use std::{collections::HashMap, path::Path, io::Write, path::PathBuf, env, fs};
 use super::{discord, matrix, generic, DBFile};
-use std::io::Write;
-use std::path::PathBuf;
 
 #[derive(Serialize)]
 pub struct SelectionContext<'a> {

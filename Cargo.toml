@@ -17,7 +17,7 @@ chrono = "0.4.19"
 rusqlite = { version = "0.25", features = ["bundled", "chrono"] }
 tempfile = "3.2.0"
 fernet = "0.1.4"
-openssl = "0.10.35"
+openssl = { version = "0.10.35", features = ["vendored"] }
 base64 = "0.13.0"
 nom = { version = "6.2.1", features = ["regexp"] }
 lazy_static = "1.4.0"
