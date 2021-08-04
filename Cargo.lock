@@ -229,6 +229,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.13.0",
  "chrono",
+ "discord-markdown",
  "dotenv",
  "fernet",
  "glob 0.3.0",
@@ -371,6 +372,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3dd60d1080a57a05ab032377049e0591415d2b31afd7028356dbf3cc6dcb066"
 dependencies = [
  "generic-array 0.14.4",
+]
+
+[[package]]
+name = "discord-markdown"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48c3694a704caa9061c5d830e1859eb57cefc02c3ff99acd4a7ffe7fba10d451"
+dependencies = [
+ "html-escape",
+ "lazy_static",
+ "nom",
 ]
 
 [[package]]

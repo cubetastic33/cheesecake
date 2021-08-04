@@ -2,8 +2,7 @@ use chrono::prelude::*;
 use rusqlite::{Connection, ToSql};
 use std::path::{Path, PathBuf};
 use super::actions::{Message, refrigerator, day_separator};
-use super::parser;
-use super::convertor;
+use discord_markdown::{parser, convertor};
 use super::generic::file_type;
 
 enum AssetType {
@@ -164,11 +163,11 @@ pub fn populate_messages<'a>(
         // Parse markdown
         let raw_content: String = row.get(10).unwrap_or(String::new());
         let ast = if bot == 2 {
-            parser::parse_embed(&raw_content).unwrap()
+            parser::parse_with_md_hyperlinks(&raw_content)
         } else {
-            parser::parse(&raw_content).unwrap()
+            parser::parse(&raw_content)
         };
-        let content = convertor::to_html(
+        let content = convertor::to_html_with_callbacks(
             ast,
             |filename| (url(backup_path, Emoji, filename), None),
             |id| id_to_name(&conn, "users", id),

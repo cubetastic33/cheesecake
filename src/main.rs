@@ -15,8 +15,6 @@ mod actions;
 mod discord;
 mod matrix;
 mod generic;
-mod parser;
-mod convertor;
 
 #[derive(FromForm)]
 pub struct Password {

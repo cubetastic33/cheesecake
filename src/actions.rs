@@ -351,7 +351,7 @@ pub fn search<'a>(db_file: &'a Option<NamedTempFile>, backup_path: &'a str, chat
     populate_messages(
         &database_path(db_file, backup_path),
         backup_path,
-        &("{} chat = $1 AND ROWID IN (SELECT ROWID FROM message_search WHERE message_search MATCH $2 ORDER BY rank) AND ".to_owned() + filters),
+        &("{} chat = $1 AND id IN (SELECT id FROM message_search WHERE message_search MATCH $2 ORDER BY rank) AND ".to_owned() + filters),
         &[&chat_id, &query]
     )
 }

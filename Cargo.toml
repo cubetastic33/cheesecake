@@ -5,6 +5,7 @@ authors = ["aravk <aravkasi@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+discord-markdown = "0.1.2"
 dotenv = "0.15"
 glob = "0.3"
 rocket = "0.4.10"

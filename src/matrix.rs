@@ -31,8 +31,6 @@ pub fn populate_messages<'a>(
     // variable for easy comparison
     let mut previous_timestamp = Local.timestamp(0, 0);
 
-    let time = std::time::Instant::now();
-
     while let Some(row) = rows.next().unwrap() {
         let message_type: String = row.get(2).unwrap();
         let name = row.get(3).unwrap();
@@ -134,6 +132,5 @@ pub fn populate_messages<'a>(
 
         previous_timestamp = created_timestamp;
     }
-    println!("time at matrix.rs: {}", (std::time::Instant::now() - time).as_millis());
     messages
 }
