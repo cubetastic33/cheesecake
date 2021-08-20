@@ -15,6 +15,7 @@ mod actions;
 mod discord;
 mod matrix;
 mod generic;
+mod static_include;
 
 #[derive(FromForm)]
 pub struct Password {

@@ -6,6 +6,15 @@ pub struct StaticFiles<const N: usize> {
     pub rank: isize,
 }
 
+impl<const N: usize> StaticFiles<N> {
+    pub fn rank(self, rank: isize) -> Self {
+        StaticFiles {
+            rank,
+            ..self
+        }
+    }
+}
+
 #[non_exhaustive]
 pub struct File {
     pub name: &'static OsStr,
