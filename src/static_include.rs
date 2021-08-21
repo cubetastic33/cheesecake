@@ -90,23 +90,3 @@ impl<const N: usize> From<StaticFiles<N>> for Vec<Route> {
         )]
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Since we have implemented [`Copy`] and [`Clone`], we should probably
-    /// make sure these structs can be efficiently copied on the stack.
-    /// These days, most data under 64 bits can be moved without much
-    /// trouble.
-    mod size {
-        use super::super::*;
-        use std::mem::size_of;
-        #[test]
-        fn test_file_size() {
-            assert!(size_of::<File>() <= 8)
-        }
-
-        // TODO: test static files size
-    }
-}
