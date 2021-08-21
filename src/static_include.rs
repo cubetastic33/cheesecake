@@ -39,13 +39,13 @@ macro_rules! include_static {
             files: [
                 $(
                     crate::static_include::File {
-                        name: std::path::Path::new($path),
+                        path: std::path::Path::new($path),
                         body: include_bytes!(concat![env!("CARGO_MANIFEST_DIR"), "/", $path])
                     }
                 ),*
             ],
             rank: 10,
-            root: Path::new("static"),
+            root: std::path::Path::new("static"),
         }
     }
 }
@@ -68,8 +68,6 @@ impl<const N: usize> Handler for StaticFiles<N> {
             .get_segments::<Segments>(0)
             .and_then(Result::ok)
             .and_then(|segments| segments.into_path_buf(false).ok())
-            .map(|path| self.root.join(path))
-            .filter(|path| path.is_file())
             .into_outcome(Status::NotFound)?;
 
         Outcome::from(
@@ -77,7 +75,7 @@ impl<const N: usize> Handler for StaticFiles<N> {
             self.files
                 .iter()
                 .copied()
-                .find(|File { path, .. }| &req_path == path),
+                .find(|File { path, .. }| &req_path == path.file_name().unwrap()),
         )
     }
 }
