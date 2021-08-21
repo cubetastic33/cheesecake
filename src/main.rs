@@ -15,6 +15,7 @@ mod actions;
 mod discord;
 mod matrix;
 mod generic;
+mod static_include;
 
 #[derive(FromForm)]
 pub struct Password {
@@ -165,12 +166,39 @@ fn rocket() -> rocket::Rocket {
     rocket::custom(configure())
         .mount(
             "/",
-            routes![get_index, get_reader, post_decrypt, post_jump, post_messages, post_search],
+            routes![
+                get_index,
+                get_reader,
+                post_decrypt,
+                post_jump,
+                post_messages,
+                post_search
+            ],
         )
-        .mount("/styles", StaticFiles::from("static/styles"))
-        .mount("/scripts", StaticFiles::from("static/scripts"))
-        .mount("/fonts", StaticFiles::from("static/fonts"))
-        .mount("/images", StaticFiles::from("static/images"))
+        .mount(
+            "/styles",
+            include_static![
+                "static/styles/main.css",
+                "static/styles/main.css.map",
+                "static/styles/reader.css",
+                "static/styles/reader.css.map"
+            ],
+        )
+        .mount(
+            "/scripts",
+            include_static![
+                "static/scripts/jquery-3.6.0.min.js",
+                "static/scripts/main.js",
+                "static/scripts/main.js.map",
+                "static/scripts/reader.js",
+                "static/scripts/reader.js.map",
+            ],
+        )
+        .mount(
+            "/fonts",
+            include_static!("static/fonts/SourceSansPro-Regular.ttf"),
+        )
+        .mount("/images", include_static!("static/images/default.svg"))
         .mount("/", StaticFiles::from(actions::refrigerator()).rank(20))
         .attach(Template::fairing())
 }
