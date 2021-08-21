@@ -80,9 +80,14 @@ impl<const N: usize> Handler for StaticFiles<N> {
     }
 }
 
-impl<const N: usize> Into<Vec<Route>> for StaticFiles<N> {
-    fn into(self) -> Vec<Route> {
-        vec![Route::ranked(self.rank, Method::Get, "/<path..>", self)]
+impl<const N: usize> From<StaticFiles<N>> for Vec<Route> {
+    fn from(static_files: StaticFiles<N>) -> Vec<Route> {
+        vec![Route::ranked(
+            static_files.rank,
+            Method::Get,
+            "/<path..>",
+            static_files,
+        )]
     }
 }
 
