@@ -34,7 +34,7 @@ pub struct File {
 
 #[macro_export]
 macro_rules! include_static {
-    ($($path:literal),*) => {
+    ($($path:literal),* $(,)?) => {
         crate::static_include::StaticFiles {
             files: [
                 $(
