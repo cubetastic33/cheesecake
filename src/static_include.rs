@@ -2,10 +2,9 @@ use std::path::Path;
 
 use rocket::{
     handler::Outcome,
-    http::{uri::Segments, ContentType, Status},
+    http::{uri::Segments, ContentType, Method, Status},
     outcome::IntoOutcome,
-    response,
-    Data, Handler, Request,
+    response, Data, Handler, Request, Route,
 };
 
 #[non_exhaustive]
@@ -80,5 +79,36 @@ impl<const N: usize> Handler for StaticFiles<N> {
                 .copied()
                 .find(|File { path, .. }| &req_path == path),
         )
+    }
+}
+
+impl<const N: usize> Into<Vec<Route>> for StaticFiles<N> {
+    fn into(self) -> Vec<Route> {
+        vec![Route::ranked(
+            self.rank,
+            Method::Get,
+            "/<path..>",
+            self,
+        )]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Since we have implemented [`Copy`] and [`Clone`], we should probably
+    /// make sure these structs can be efficiently copied on the stack.
+    /// These days, most data under 64 bits can be moved without much
+    /// trouble.
+    mod size {
+        use super::super::*;
+        use std::mem::size_of;
+        #[test]
+        fn test_file_size() {
+            assert!(size_of::<File>() <= 8)
+        }
+
+        // TODO: test static files size
     }
 }
