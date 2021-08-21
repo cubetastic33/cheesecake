@@ -75,7 +75,7 @@ impl<const N: usize> Handler for StaticFiles<N> {
             self.files
                 .iter()
                 .copied()
-                .find(|File { path, .. }| &req_path == path.file_name().unwrap()),
+                .find(|File { path, .. }| req_path == path.file_name().unwrap()),
         )
     }
 }
