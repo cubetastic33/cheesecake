@@ -4,7 +4,7 @@ extern crate rocket;
 extern crate serde_derive;
 
 use dotenv::dotenv;
-use rocket::{http::CookieJar, form::Form, response::Redirect, serde::json::Json, fs::{FileServer, relative}, Config, State};
+use rocket::{http::CookieJar, form::Form, response::Redirect, serde::json::Json, Config, State};
 use rocket_dyn_templates::{Template, tera::Tera};
 use tempfile::NamedTempFile;
 use std::sync::Mutex;
