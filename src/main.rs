@@ -9,10 +9,13 @@ use rocket_dyn_templates::{Template, tera::Tera};
 use tempfile::NamedTempFile;
 use std::sync::Mutex;
 
+use crate::static_include::static_file;
+
 mod actions;
 mod discord;
 mod matrix;
 mod generic;
+mod static_include;
 
 #[derive(FromForm)]
 pub struct Password {
@@ -176,23 +179,10 @@ fn rocket() -> _ {
                 post_decrypt,
                 post_jump,
                 post_messages,
-                post_search
+                post_search,
+                static_file
             ],
         )
-        .mount(
-            "/styles",
-            FileServer::from(relative!("static/styles"))
-        )
-        .mount(
-            "/scripts",
-            FileServer::from(relative!("static/scripts"))
-        )
-        .mount(
-            "/fonts",
-            FileServer::from(relative!("static/fonts"))
-        )
-        .mount("/images", FileServer::from(relative!("static/images")))
-        .mount("/", FileServer::from(actions::refrigerator()).rank(20))
         .attach(Template::custom(|engines| customize(&mut engines.tera)))
         .manage(Mutex::new(DBFile {backup_path: String::new(), file: None}))
 }
