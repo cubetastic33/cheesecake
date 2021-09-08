@@ -1,13 +1,11 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-
 #[macro_use]
 extern crate rocket;
 #[macro_use]
 extern crate serde_derive;
 
 use dotenv::dotenv;
-use rocket::{http::Cookies, request::Form, response::Redirect, Config, State};
-use rocket_contrib::{json::Json, serve::StaticFiles, templates::Template};
+use rocket::{http::CookieJar, form::Form, response::Redirect, serde::json::Json, fs::{FileServer, relative}, Config, State};
+use rocket_dyn_templates::{Template, tera::Tera};
 use tempfile::NamedTempFile;
 use std::sync::Mutex;
 
@@ -15,7 +13,6 @@ mod actions;
 mod discord;
 mod matrix;
 mod generic;
-mod static_include;
 
 #[derive(FromForm)]
 pub struct Password {
@@ -53,7 +50,7 @@ impl DBFile {
 }
 
 #[get("/")]
-fn get_index(db_file: State<Mutex<DBFile>>, cookies: Cookies) -> Template {
+fn get_index(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>) -> Template {
     let mut backup_path = "";
     let mut chat_id = "";
     if let Some(backup) = cookies.get("backup") {
@@ -62,11 +59,11 @@ fn get_index(db_file: State<Mutex<DBFile>>, cookies: Cookies) -> Template {
             chat_id = chat.value();
         }
     }
-    Template::render("index", actions::selection_context(&db_file.lock().unwrap(), backup_path, chat_id))
+    Template::render("index.html", actions::selection_context(&db_file.lock().unwrap(), backup_path, chat_id))
 }
 
 #[get("/reader")]
-fn get_reader(db_file: State<Mutex<DBFile>>, cookies: Cookies) -> Result<Template, Redirect> {
+fn get_reader(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>) -> Result<Template, Redirect> {
     if let Some(backup) = cookies.get("backup") {
         if backup.value() != db_file.lock().unwrap().backup_path {
             // This is not a decrypted backup
@@ -74,7 +71,7 @@ fn get_reader(db_file: State<Mutex<DBFile>>, cookies: Cookies) -> Result<Templat
         }
         if let Some(chat) = cookies.get("chat") {
             return Ok(Template::render(
-                "reader",
+                "reader.html",
                 actions::chat(&db_file.lock().unwrap(), backup.value(), chat.value()),
             ));
         }
@@ -85,7 +82,7 @@ fn get_reader(db_file: State<Mutex<DBFile>>, cookies: Cookies) -> Result<Templat
 // POST requests
 
 #[post("/decrypt", data = "<password>")]
-fn post_decrypt(db_file: State<Mutex<DBFile>>, cookies: Cookies, password: Form<Password>) -> Json<Vec<[String; 2]>> {
+fn post_decrypt(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>, password: Form<Password>) -> Json<Vec<[String; 2]>> {
     if let Some(backup) = cookies.get("backup") {
         db_file.lock().unwrap().backup_path = backup.value().to_owned();
         return Json(actions::decrypt(&mut db_file.lock().unwrap(), &password.password));
@@ -94,7 +91,7 @@ fn post_decrypt(db_file: State<Mutex<DBFile>>, cookies: Cookies, password: Form<
 }
 
 #[post("/jump", data = "<info>")]
-fn post_jump<'a>(db_file: State<Mutex<DBFile>>, cookies: Cookies, info: Form<JumpDetails>) -> Json<actions::ChatContext<'a>> {
+fn post_jump<'a>(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>, info: Form<JumpDetails>) -> Json<actions::ChatContext<'a>> {
     if let Some(backup) = cookies.get("backup") {
         if backup.value() != db_file.lock().unwrap().backup_path {
             // This is not a decrypted backup
@@ -116,7 +113,7 @@ fn post_jump<'a>(db_file: State<Mutex<DBFile>>, cookies: Cookies, info: Form<Jum
 
 // Used for getting the messages around a specific message ID
 #[post("/messages", data = "<info>")]
-fn post_messages(db_file: State<Mutex<DBFile>>, cookies: Cookies, info: Form<GetMessages>) -> Json<Vec<actions::Message>> {
+fn post_messages(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>, info: Form<GetMessages>) -> Json<Vec<actions::Message>> {
     let time = std::time::Instant::now();
     if let Some(backup) = cookies.get("backup") {
         if backup.value() != db_file.lock().unwrap().backup_path {
@@ -141,7 +138,7 @@ fn post_messages(db_file: State<Mutex<DBFile>>, cookies: Cookies, info: Form<Get
 }
 
 #[post("/search", data = "<query>")]
-fn post_search(db_file: State<Mutex<DBFile>>, cookies: Cookies, query: Form<Query>) -> Json<Vec<actions::Message>> {
+fn post_search(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>, query: Form<Query>) -> Json<Vec<actions::Message>> {
     if let Some(backup) = cookies.get("backup") {
         if backup.value() != db_file.lock().unwrap().backup_path {
             // This is not a decrypted backup
@@ -156,14 +153,21 @@ fn post_search(db_file: State<Mutex<DBFile>>, cookies: Cookies, query: Form<Quer
     Json(Vec::new())
 }
 
-fn configure() -> Config {
-    let mut config = Config::active().expect("could not load configuration");
-    config.set_port(4000);
-    config
+fn customize(tera: &mut Tera) {
+    tera.add_raw_templates([
+        ("index.html", include_str!("../templates/index.html.tera")),
+        ("reader.html", include_str!("../templates/reader.html.tera")),
+    ]).unwrap();
 }
 
-fn rocket() -> rocket::Rocket {
-    rocket::custom(configure())
+#[launch]
+fn rocket() -> _ {
+    // Read environment variables from .env
+    dotenv().ok();
+    // Configure rocket
+    let figment = Config::figment().merge(("port", 4000)).merge(("template_dir", "."));
+    // Start the webserver
+    rocket::custom(figment)
         .mount(
             "/",
             routes![
@@ -177,35 +181,18 @@ fn rocket() -> rocket::Rocket {
         )
         .mount(
             "/styles",
-            include_static![
-                "static/styles/main.css",
-                "static/styles/main.css.map",
-                "static/styles/reader.css",
-                "static/styles/reader.css.map"
-            ],
+            FileServer::from(relative!("static/styles"))
         )
         .mount(
             "/scripts",
-            include_static![
-                "static/scripts/jquery-3.6.0.min.js",
-                "static/scripts/main.js",
-                "static/scripts/main.js.map",
-                "static/scripts/reader.js",
-                "static/scripts/reader.js.map",
-            ],
+            FileServer::from(relative!("static/scripts"))
         )
         .mount(
             "/fonts",
-            include_static!("static/fonts/SourceSansPro-Regular.ttf"),
+            FileServer::from(relative!("static/fonts"))
         )
-        .mount("/images", include_static!("static/images/default.svg"))
-        .mount("/", StaticFiles::from(actions::refrigerator()).rank(20))
-        .attach(Template::fairing())
-}
-
-fn main() {
-    // Read environment variables from .env
-    dotenv().ok();
-    // Start the webserver
-    rocket().manage(Mutex::new(DBFile {backup_path: String::new(), file: None})).launch();
+        .mount("/images", FileServer::from(relative!("static/images")))
+        .mount("/", FileServer::from(actions::refrigerator()).rank(20))
+        .attach(Template::custom(|engines| customize(&mut engines.tera)))
+        .manage(Mutex::new(DBFile {backup_path: String::new(), file: None}))
 }
