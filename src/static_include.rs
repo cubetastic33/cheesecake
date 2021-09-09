@@ -12,7 +12,7 @@ use rust_embed::RustEmbed;
 #[exclude = "*.ts"]
 struct Assets;
 
-#[get("/<file..>", rank = 10)]
+#[get("/<file..>", rank = 20)]
 pub fn static_file<'r>(file: PathBuf) -> Result<(ContentType, Cow<'static, [u8]>), Status> {
     let filename = file.display().to_string();
     let d = Assets::get(&filename).ok_or(Status::NotFound)?;

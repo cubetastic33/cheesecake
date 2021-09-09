@@ -4,7 +4,7 @@ extern crate rocket;
 extern crate serde_derive;
 
 use dotenv::dotenv;
-use rocket::{http::CookieJar, form::Form, response::Redirect, serde::json::Json, Config, State};
+use rocket::{http::CookieJar, form::Form, response::Redirect, serde::json::Json, fs::FileServer, Config, State};
 use rocket_dyn_templates::{tera::Tera, Template};
 use tempfile::{tempdir, NamedTempFile};
 use std::sync::Mutex;
@@ -186,6 +186,7 @@ fn rocket() -> _ {
                 static_file,
             ],
         )
+        .mount("/", FileServer::from(actions::refrigerator()).rank(19))
         .attach(Template::custom(|engines| customize(&mut engines.tera)))
         .manage(Mutex::new(DBFile {backup_path: String::new(), file: None}))
         .manage(dir)
