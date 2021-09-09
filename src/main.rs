@@ -5,11 +5,11 @@ extern crate serde_derive;
 
 use dotenv::dotenv;
 use rocket::{http::CookieJar, form::Form, response::Redirect, serde::json::Json, Config, State};
-use rocket_dyn_templates::{Template, tera::Tera};
-use tempfile::NamedTempFile;
+use rocket_dyn_templates::{tera::Tera, Template};
+use tempfile::{tempdir, NamedTempFile};
 use std::sync::Mutex;
 
-use crate::static_include::static_file;
+use static_include::static_file;
 
 mod actions;
 mod discord;
@@ -168,7 +168,10 @@ fn rocket() -> _ {
     // Read environment variables from .env
     dotenv().ok();
     // Configure rocket
-    let figment = Config::figment().merge(("port", 4000)).merge(("template_dir", "."));
+    // Use a temp dir for templates because rocket needs one to start
+    // https://github.com/SergioBenitez/Rocket/issues/1792
+    let dir = tempdir().unwrap();
+    let figment = Config::figment().merge(("port", 4000)).merge(("template_dir", dir.path()));
     // Start the webserver
     rocket::custom(figment)
         .mount(
@@ -180,9 +183,10 @@ fn rocket() -> _ {
                 post_jump,
                 post_messages,
                 post_search,
-                static_file
+                static_file,
             ],
         )
         .attach(Template::custom(|engines| customize(&mut engines.tera)))
         .manage(Mutex::new(DBFile {backup_path: String::new(), file: None}))
+        .manage(dir)
 }
