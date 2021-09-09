@@ -117,7 +117,6 @@ fn post_jump<'a>(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>, info: 
 // Used for getting the messages around a specific message ID
 #[post("/messages", data = "<info>")]
 fn post_messages(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>, info: Form<GetMessages>) -> Json<Vec<actions::Message>> {
-    let time = std::time::Instant::now();
     if let Some(backup) = cookies.get("backup") {
         if backup.value() != db_file.lock().unwrap().backup_path {
             // This is not a decrypted backup
@@ -132,7 +131,6 @@ fn post_messages(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>, info: 
                 info.sequential_id,
                 &info.position,
             );
-            println!("time at main.rs: {}", (std::time::Instant::now() - time).as_millis());
             return Json(messages);
         }
     }
