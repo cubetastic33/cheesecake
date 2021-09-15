@@ -1,7 +1,8 @@
 use glob::glob;
 use rusqlite::Connection;
 use tempfile::NamedTempFile;
-use std::{collections::HashMap, path::Path, io::Write, path::PathBuf, env, fs};
+use directories::ProjectDirs;
+use std::{collections::HashMap, path::Path, io::{self, Write}, path::PathBuf, env, fs};
 use super::{discord, matrix, generic, DBFile};
 
 #[derive(Serialize)]
@@ -74,7 +75,47 @@ impl Default for ChatContext<'_> {
 }
 
 pub fn refrigerator() -> String {
-    env::var("REFRIGERATOR").unwrap_or(String::from("refrigerator"))
+    // First priority is the refrigerator environment variable
+    // If that doesn't exist, try a directory named `refrigerator` in the working directory
+    let path = env::var("REFRIGERATOR").unwrap_or(String::from("refrigerator"));
+    if Path::new(&path).is_dir() {
+        // If the refrigerator path is a valid directory
+        path
+    } else {
+        // If both of those failed, get the refrigerator path from the config file
+        let project_dirs = ProjectDirs::from("", "", "cheesecake").unwrap();
+        let config_dir = project_dirs.config_dir();
+        let mut new_path = String::new();
+        // The config file already exists
+        if config_dir.join("refrigerator_path").exists() {
+            // Read the config file
+            new_path = fs::read_to_string(config_dir.join("refrigerator_path")).unwrap().trim().to_string();
+            if Path::new(&new_path).is_dir() {
+                // If the path specified in the config file is a valid directory, return it
+                return new_path;
+            }
+        } else {
+            // The config file doesn't exist yet
+            // Get a path to test out
+            print!("Path `{}` is not valid. Either create the directory and restart cheesecake, or provide a new path here: ", path);
+            io::stdout().flush().unwrap();
+            // Get the new path
+            io::stdin().read_line(&mut new_path).unwrap();
+        }
+        // Keep asking for a new path until we get a valid one
+        while !Path::new(new_path.trim()).exists() {
+            print!("Path `{}` is not valid. Please enter a valid path: ", new_path.trim());
+            io::stdout().flush().unwrap();
+            // Reset `new_path`
+            new_path = String::new();
+            // Get the new path
+            io::stdin().read_line(&mut new_path).unwrap();
+        }
+        // Store the new path in the config file
+        fs::create_dir_all(config_dir).unwrap();
+        fs::write(config_dir.join("refrigerator_path"), new_path.trim()).unwrap();
+        return new_path.trim().to_string();
+    }
 }
 
 pub fn day_separator(timestamp: chrono::DateTime<chrono::Local>) -> Message {

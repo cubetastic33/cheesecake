@@ -215,6 +215,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "chrono",
+ "directories",
  "discord-markdown",
  "dotenv",
  "fernet",
@@ -359,6 +360,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "directories"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f0435dee2e8f0783bd48571bd8a8a8f531b5adcf0b8d7dc705a37c81108418d"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
 name = "dirs-next"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -366,6 +376,17 @@ checksum = "b98cf8ebf19c3d1b223e151f99a4f9f0690dca41414773390fc824184ac833e1"
 dependencies = [
  "cfg-if 1.0.0",
  "dirs-sys-next",
+]
+
+[[package]]
+name = "dirs-sys"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03d86534ed367a67548dc68113a0f5db55432fdfbb6e6f9d77704397d95d5780"
+dependencies = [
+ "libc",
+ "redox_users",
+ "winapi 0.3.9",
 ]
 
 [[package]]
