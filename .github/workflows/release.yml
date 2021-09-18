@@ -1,0 +1,126 @@
+on:
+  push:
+    tags:
+      - "v*"
+
+name: Release
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [linux, macos, windows]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            rust: stable
+          - build: macos
+            os: macos-latest
+            rust: stable
+          - build: windows
+            os: windows-latest
+            rust: stable
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+  
+      - name: Create artifacts directory
+        run: |
+          mkdir artifacts
+          mkdir -p artifacts/linux
+          mkdir -p artifacts/macos
+          mkdir -p artifacts/windows
+
+      - name: Rename linux binary
+        if: matrix.build == 'linux'
+        run: mv target/release/cheesecake artifacts/cheesecake-linux
+      - name: Rename macos binary
+        if: matrix.build == 'macos'
+        run: mv target/release/cheesecake artifacts/cheesecake-macos
+      - name: Rename windows binary
+        if: matrix.build == 'windows'
+        run: mv target/release/cheesecake.exe artifacts/cheesecake-windows.exe
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.build }}
+          path: ./artifacts
+
+  release:
+    name: GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query version number
+        id: get_version
+        shell: bash
+        run: |
+          echo "using version tag ${GITHUB_REF:10}"
+          echo ::set-output name=version::"${GITHUB_REF:10}"
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          release_name: ${{ steps.get_version.outputs.VERSION }}
+
+      - name: Download Linux binary
+        uses: actions/download-artifact@v2
+        with:
+          name: linux
+
+      - name: Download MacOS binary
+        uses: actions/download-artifact@v2
+        with:
+          name: macos
+
+      - name: Download Windows binary
+        uses: actions/download-artifact@v2
+        with:
+          name: windows
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Release Linux binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: cheesecake-linux
+          asset_content_type: application/octet-stream
+          asset_name: cheesecake-${{ steps.get_version.outputs.VERSION }}-linux
+
+      - name: Release MacOS binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: cheesecake-macos
+          asset_content_type: application/octet-stream
+          asset_name: cheesecake-${{ steps.get_version.outputs.VERSION }}-macos
+
+      - name: Release Windows binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: cheesecake-windows.exe
+          asset_content_type: application/octet-stream
+          asset_name: cheesecake-${{ steps.get_version.outputs.VERSION }}-windows.exe

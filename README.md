@@ -18,7 +18,12 @@ Since the archives are in a somewhat generic format, it's possible that future v
 - [When should you not use cheesecake?](#when-should-you-not-use-cheesecake)
 
 - [How well does it work with other platforms?](#how-well-does-it-work-with-other-platforms)
+
 - [Screenshots](#screenshots)
+
+- [How to use](#how-to-use)
+
+- [Contributing](#contributing)
 
 ### What's the point of cheesecake?
 
