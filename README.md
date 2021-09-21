@@ -71,7 +71,8 @@ There are separate archive formats for Discord and Matrix, because of the unique
 
 ### How to use
 
-- Run the cheesecake executable
+- Download the executable for your platform from the [releases page](https://github.com/cubetastic33/cheesecake/releases/latest)
+- Run the cheesecake executable (you might have to give the file executable permissions on linux)
 - Make sure you have a "refrigerator" directory, which is where all the backups (cheesecakes) are stored. You can set the location of the refrigerator with the `REFRIGERATOR` environment variable. If that doesn't exist, it looks for a directory called `refrigerator` in the current working directory. If that doesn't exist either, then the program will prompt you for the path, and store it in a config file so it doesn't have to ask you again.
 - Open http://localhost:4000
 
