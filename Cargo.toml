@@ -1,8 +1,13 @@
+cargo-features = ["strip"]
+
 [package]
 name = "cheesecake"
 version = "0.1.0"
 authors = ["aravk <aravkasi@gmail.com>"]
 edition = "2018"
+
+[profile.release]
+strip = true
 
 [dependencies]
 discord-markdown = "0.1.2"
