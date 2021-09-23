@@ -1,3 +1,8 @@
+$.getJSON("https://api.github.com/repos/cubetastic33/cheesecake/releases/latest", function (result) {
+    if (result["tag_name"] !== version) {
+        $("#outdated").show();
+    }
+});
 var $backup = $("#backup");
 function show_toast(message, duration) {
     if (duration === void 0) { duration = 2000; }

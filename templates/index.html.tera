@@ -37,11 +37,15 @@
     {% endif %}
     <div id="toast"></div>
     <footer>
-        © 2021 | v0.1.0 | Built by aravk
+        <div id="outdated">
+            You're running an outdated version of cheesecake. Get the latest one <a href="https://github.com/cubetastic33/cheesecake/releases/latest">here</a>.
+        </div>
+        © 2021 | v0.1.1 | Built by aravk
     </footer>
 </body>
 <script src="/scripts/jquery-3.6.0.min.js"></script>
 <script>
+    const version = "v0.1.1";
     const initial_chats = {{ mapped_chats | safe }};
     let chats = {{ mapped_chats | safe }};
 </script>

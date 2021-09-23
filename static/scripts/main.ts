@@ -1,5 +1,13 @@
+declare const version;
 declare const initial_chats;
 declare let chats;
+
+// Check if cheesecake is up to date
+$.getJSON("https://api.github.com/repos/cubetastic33/cheesecake/releases/latest", result => {
+    if (result["tag_name"] !== version) {
+        $("#outdated").show();
+    }
+});
 
 let $backup = $("#backup");
 

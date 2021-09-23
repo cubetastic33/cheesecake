@@ -135,5 +135,14 @@ button:not(:disabled):hover {
 }
 
 footer {
+    text-align: center;
     opacity: .8;
+
+    #outdated {
+        display: none;
+    }
+
+    a {
+        color: var(--accent);
+    }
 }
