@@ -39,7 +39,7 @@ jobs:
         run: mv target/release/cheesecake artifacts/cheesecake-linux
       - name: Rename macos binary
         if: matrix.build == 'macos'
-        run: mv target/release/cheesecake artifacts/cheesecake-macos
+        run: mv target/release/cheesecake artifacts/cheesecake-macos.command
       - name: Rename windows binary
         if: matrix.build == 'windows'
         run: mv target/release/cheesecake.exe artifacts/cheesecake-windows.exe
@@ -105,9 +105,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: cheesecake-macos
+          asset_path: cheesecake-macos.command
           asset_content_type: application/octet-stream
-          asset_name: cheesecake-${{ steps.get_version.outputs.VERSION }}-macos
+          asset_name: cheesecake-${{ steps.get_version.outputs.VERSION }}-macos.command
 
       - name: Release Windows binary
         uses: actions/upload-release-asset@v1
