@@ -62,7 +62,10 @@ fn get_index(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>) -> Templat
             chat_id = chat.value();
         }
     }
-    Template::render("index.html", actions::selection_context(&db_file.lock().unwrap(), backup_path, chat_id))
+    Template::render(
+        if cfg!(debug_assertions) {"index"} else {"index.html"},
+        actions::selection_context(&db_file.lock().unwrap(), backup_path, chat_id)
+    )
 }
 
 #[get("/reader")]
@@ -74,7 +77,7 @@ fn get_reader(db_file: &State<Mutex<DBFile>>, cookies: &CookieJar<'_>) -> Result
         }
         if let Some(chat) = cookies.get("chat") {
             return Ok(Template::render(
-                "reader.html",
+                if cfg!(debug_assertions) {"reader"} else {"reader.html"},
                 actions::chat(&db_file.lock().unwrap(), backup.value(), chat.value()),
             ));
         }
@@ -166,12 +169,16 @@ fn rocket() -> _ {
     // Read environment variables from .env
     dotenv().ok();
     // Configure rocket
-    // Use a temp dir for templates because rocket needs one to start
-    // https://github.com/SergioBenitez/Rocket/issues/1792
+    let mut figment = Config::figment().merge(("port", 4000));
     let dir = tempdir().unwrap();
-    let figment = Config::figment().merge(("port", 4000)).merge(("template_dir", dir.path()));
+    if !cfg!(debug_assertions) {
+        // Use a temp dir for templates in release builds because rocket needs one to start
+        // We can't use `templates` because it may or may not exist
+        // https://github.com/SergioBenitez/Rocket/issues/1792
+        figment = figment.merge(("template_dir", dir.path()));
+    }
     // Start the webserver
-    rocket::custom(figment)
+    let server = rocket::custom(figment)
         .mount(
             "/",
             routes![
@@ -185,7 +192,14 @@ fn rocket() -> _ {
             ],
         )
         .mount("/", FileServer::from(actions::refrigerator()).rank(19))
-        .attach(Template::custom(|engines| customize(&mut engines.tera)))
-        .manage(Mutex::new(DBFile {backup_path: String::new(), file: None}))
-        .manage(dir)
+        .manage(Mutex::new(DBFile {backup_path: String::new(), file: None}));
+    if cfg!(debug_assertions) {
+        // We need to live reload templates in debug builds
+        server.attach(Template::fairing())
+    } else {
+        // Statically include templates in release builds
+        server
+            .manage(dir)
+            .attach(Template::custom(|engines| customize(&mut engines.tera)))
+    }
 }
