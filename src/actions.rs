@@ -244,13 +244,16 @@ pub fn decrypt(db_file: &mut DBFile, password: &str) -> Vec<[String; 2]> {
             if let Some(fernet) = fernet::Fernet::new(&base64::encode(key)) {
                 let ciphertext = std::fs::read_to_string(info_path.parent().unwrap().join("backup.db")).unwrap();
                 let mut file = NamedTempFile::new().unwrap();
-                file.write_all(fernet.decrypt(&ciphertext).unwrap().as_slice()).unwrap();
-                // Open a connection to the decrypted database
-                let conn = Connection::open(file.path()).unwrap();
-                // Store the NamedTempFile instance to State so that the file doesn't get destroyed
-                db_file.file = Some(file);
-                // Return the list of chats
-                return chat_list(conn);
+                if let Ok(decrypted) = fernet.decrypt(&ciphertext) {
+                    // If the file was successfully decrypted with the generated key
+                    file.write_all(decrypted.as_slice()).unwrap();
+                    // Open a connection to the decrypted database
+                    let conn = Connection::open(file.path()).unwrap();
+                    // Store the NamedTempFile instance to State so that the file doesn't get destroyed
+                    db_file.file = Some(file);
+                    // Return the list of chats
+                    return chat_list(conn);
+                }
             }
         }
     }
